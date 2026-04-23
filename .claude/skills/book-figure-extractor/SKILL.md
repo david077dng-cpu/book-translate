@@ -297,10 +297,8 @@ pip install PyMuPDF --break-system-packages
 python scripts/extract_figures.py book.pdf 3
 
 # 3. Claude AI视觉验证提取质量
-# 3.1 生成验证提示，复制到 Claude，使用 /paste 依次粘贴图片进行验证
+# 3.1 生成验证任务，Claude 直接使用 Read 工具读取每张图片进行验证
 python scripts/verify_extraction.py figures/verification_tasks.json
-# 3.2 Claude返回JSON结果后，保存为 result.json 并导入
-python scripts/verify_extraction.py figures/verification_tasks.json --result result.json
 
 # 4. 自动重试验证失败的图片（脚本会分析失败原因自动调整参数重试）
 python scripts/extract_figures.py book.pdf 3 --retry-failed
@@ -336,6 +334,8 @@ cat figures/verification_tasks.json  # 验证结果
 
 ### 验证步骤
 
+Claude Code agent 原生支持直接读取本地图片文件进行视觉分析，验证流程自动进行：
+
 1. **完整性验证**：
    - ✅ 通过：图片只包含完整图形，不包含多余文字/背景，完整显示无截断
    - ❌ 失败：图片裁切不全，包含多余文字，或多个图混在一起
@@ -343,6 +343,8 @@ cat figures/verification_tasks.json  # 验证结果
 2. **Caption匹配验证**：
    - ✅ 通过：图片内容与caption文字描述一致
    - ❌ 失败：提取了错误的图片，内容与caption不匹配
+
+验证由 agent 自动执行：脚本生成 `verification_tasks.json` 后，agent 使用 Read 工具依次读取每张图片，直接进行视觉分析并将结果写回文件。
 
 ### 验证输出
 

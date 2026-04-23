@@ -329,32 +329,34 @@ def extract_figures_from_pdf(
             found_page = None
             found_cap = None
 
-            # 首先全页搜索确认caption的真实位置
+            # 🚨 关键步骤：重试前必须在整个PDF中重新搜索确认caption的真实页码！
+            # 即使原任务记录了页码，也必须重新全页搜索 —— 首遍提取可能页码错了导致提取失败
             # p.number 是 0-based 页码（PyMuPDF 迭代从0开始）
             # task["page"] 是 1-based 页码（用户可见记法）
-            found_page_0 = None
-            found_cap = None
+            all_found = []  # 记录所有找到的位置
             for p in doc:
                 captions_all = find_captions(p)
                 for cap in captions_all:
                     if cap["num"] == fig_num:
-                        found_page_0 = p.number  # 0-based
-                        found_cap = cap
-                        break
-                if found_cap is not None:
-                    break
-
-            if found_cap is None:
+                        all_found.append((p.number, cap))  # (0-based page, caption)
+            if not all_found:
                 if verbose:
-                    print(f"    ❌ Figure {fig_num}: 在PDF中找不到此caption，跳过")
+                    print(f"    ❌ Figure {fig_num}: 在整个PDF中找不到此caption，跳过")
                 continue
-
+            if len(all_found) > 1:
+                if verbose:
+                    pages_str = ", ".join(str(p[0] + 1) for p in all_found)
+                    print(f"    ⚠ Figure {fig_num}: 在多个页码找到此caption: {pages_str}，使用第一个")
+            # 使用第一个找到的位置（通常是正确的）
+            found_page_0, found_cap = all_found[0]
             # 检查记录的页码是否与实际位置一致
-            # task["page"] 是 1-based，found_page_0 是 0-based → 转换比较
             if "page" in task and (found_page_0 + 1) != task["page"]:
                 if verbose:
-                    print(f"    🔍 Figure {fig_num}: 页码已更正 {task['page']} → {found_page_0 + 1}")
-            page_idx = found_page_0  # already 0-based
+                    print(f"    🔍 Figure {fig_num}: 已确认更正页码 {task['page']} → {found_page_0 + 1} (全PDF搜索)")
+            else:
+                if verbose:
+                    print(f"    🔍 Figure {fig_num}: 页码已确认: {found_page_0 + 1} (全PDF搜索)")
+            page_idx = found_page_0  # 0-based
             page = doc[page_idx]
             cap_bbox = found_cap["bbox"]
 

@@ -23,7 +23,9 @@ from typing import Dict, List, Optional
 def generate_verification_prompt(tasks: List[Dict]) -> str:
     """生成给Claude的验证提示词"""
 
-    prompt = """你现在需要对提取出的书籍插图进行两项验证，请逐图检查：
+    prompt = """你现在需要对提取出的书籍插图进行两项验证，请逐图检查。
+
+对于每张图片，先使用 Read 工具读取图片文件，然后进行验证。
 
 ## 验证规则
 
@@ -206,18 +208,16 @@ def main():
     # 生成提示词，让Claude进行视觉验证
     prompt = generate_verification_prompt(pending_tasks)
     print("\n" + "="*60)
-    print("以下是给Claude视觉验证的提示，请复制到Claude:")
+    print("Claude agent 请开始视觉验证:")
     print("="*60 + "\n")
     print(prompt)
     print("\n" + "="*60)
-    print("\n操作步骤:")
-    print("1. 在Claude中粘贴上面的提示词")
-    print("2. 使用 `/paste` 命令依次粘贴所有待验证的图片文件")
-    print("3. Claude会返回JSON格式的验证结果")
-    print("4. 将返回的完整JSON复制保存到文件 `result.json`")
-    print("5. 运行导入结果:")
+    print("\n操作步骤（自动执行）:")
+    print("1. 使用 Read 工具依次读取每张图片文件：Read(file_path=\"IMAGE_PATH\")")
+    print("2. 对每张图片进行完整性和Caption匹配检查")
+    print("3. 验证完成后输出JSON结果并保存为 `result.json`")
+    print("4. 运行导入结果:")
     print(f"   python {sys.argv[0]} {args.verification_file} --result result.json")
-    print("\n完成验证后结果会写入 verification_tasks.json")
 
     return 0
 
